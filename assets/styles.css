@@ -43,7 +43,7 @@ sub { font-size: .62em; vertical-align: baseline; position: relative; top: .28em
 .skip:focus { left: 12px; top: 12px; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
 
-.eyebrow { display: inline-flex; align-items: center; gap: 10px; font: 500 13px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--accent-2); margin-bottom: 16px; }
+.eyebrow { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; font: 500 13px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--accent-2); margin-bottom: 16px; }
 .eyebrow--light { color: var(--ice); }
 .eyebrow .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 6px rgba(242, 106, 27, .18); }
 .head { display: grid; gap: 0; margin-bottom: 44px; max-width: 760px; }
