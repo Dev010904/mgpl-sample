@@ -70,7 +70,9 @@
     n2: { name: 'Nitrogen', sym: 'N<sub>2</sub>', text: 'An inert gas that keeps oxygen and moisture away, so products stay safe, dry and fresh.', uses: ['Inerting and blanketing', 'Pipeline purging', 'Food packing', 'Pharma processing', 'Laser cutting'], spec: [['Molar mass', '28.01 g/mol'], ['Boils at', '−196 °C'], ['Share of air', '78.1%']], supply: 'Supplied in high-pressure cylinders.' },
     ar: { name: 'Argon', sym: 'Ar', text: 'The shielding gas for clean, spatter-free welds on stainless steel and aluminium.', uses: ['TIG welding', 'MIG welding', 'Stainless and aluminium', 'Laser and plasma', 'Metallurgy'], spec: [['Molar mass', '39.95 g/mol'], ['Boils at', '−186 °C'], ['Share of air', '0.93%']], supply: 'Supplied in high-pressure cylinders.' },
     co2: { name: 'Carbon dioxide', sym: 'CO<sub>2</sub>', text: 'Shields welds, puts the fizz in drinks, chills food and puts out fires.', uses: ['MIG and MAG welding', 'Beverage carbonation', 'Food chilling', 'Fire extinguishers', 'Water treatment'], spec: [['Molar mass', '44.01 g/mol'], ['Turns to gas at', '−78.5 °C'], ['Share of air', '0.04%']], supply: 'Supplied in high-pressure cylinders.' },
-    med: { name: 'Medical oxygen', sym: 'O<sub>2</sub>', text: 'Oxygen for patients, supplied to hospitals, clinics and ambulances with the care that medical gases demand.', uses: ['Wards and ICUs', 'Operation theatres', 'Clinics', 'Ambulances', 'Home oxygen therapy'], spec: [['Molar mass', '32.00 g/mol'], ['Boils at', '−183 °C'], ['Grade', 'Medical']], supply: 'Supplied in medical oxygen cylinders for hospitals and clinics.' }
+    da: { name: 'Dissolved acetylene', sym: 'DA', text: 'The fuel gas for gas welding, cutting, brazing and flame heating. It is supplied dissolved in acetone inside a cylinder packed with a porous mass, which keeps it stable and safe to store.', note: 'A dependable substitute for LPG in cutting and heating. With oxygen it burns at about 3,100 °C, the hottest flame of any common fuel gas, so metal heats faster, cuts come out cleaner and steel can even be welded.', uses: ['Gas welding', 'Oxy-acetylene cutting', 'Brazing', 'Flame heating and hardening', 'Lab analysis'], spec: [['Molar mass', '26.04 g/mol'], ['Flame with oxygen', '≈ 3,100 °C'], ['Stored', 'In acetone']], supply: 'Supplied in dissolved acetylene (DA) cylinders.' },
+    n2o: { name: 'Nitrous oxide', sym: 'N<sub>2</sub>O', text: 'A slightly sweet gas used with oxygen for anaesthesia and pain relief in hospitals and dental clinics, and in industry as an oxidiser and a food-grade propellant.', uses: ['Anaesthesia', 'Dental clinics', 'Labour pain relief', 'Food aerosols', 'Lab analysis'], spec: [['Molar mass', '44.01 g/mol'], ['Boils at', '−88.5 °C'], ['Supplied as', 'Liquefied gas']], supply: 'Supplied in high-pressure cylinders as a liquefied gas.' },
+    mo2: { name: 'Medical oxygen', sym: 'MO<sub>2</sub>', text: 'Oxygen for patients, supplied to hospitals, clinics and ambulances with the care that medical gases demand, round the clock, 24×7.', uses: ['Wards and ICUs', 'Operation theatres', 'Clinics', 'Ambulances', 'Home oxygen therapy'], spec: [['Molar mass', '32.00 g/mol'], ['Boils at', '−183 °C'], ['Grade', 'Medical']], supply: 'Supplied in medical oxygen cylinders for hospitals and clinics, 24×7.' }
   };
   var panel = $('#gasPanel');
   function showGas(key) {
@@ -80,6 +82,9 @@
     $('#gasBig').innerHTML = g.sym;
     $('#gasName').textContent = g.name;
     $('#gasText').textContent = g.text;
+    var note = $('#gasNote');
+    note.textContent = g.note || '';
+    note.hidden = !g.note;
     $('#gasUses').innerHTML = g.uses.map(function (u) { return '<li>' + u + '</li>'; }).join('');
     $('#gasSpec').innerHTML = g.spec.map(function (s) { return '<div><dt>' + s[0] + '</dt><dd>' + s[1] + '</dd></div>'; }).join('');
     $('#gasSupply').textContent = g.supply;
@@ -99,15 +104,40 @@
   });
   showGas('o2');
   panel.classList.remove('swap');
-  $('#gasCta').addEventListener('click', function () {
-    var want = this.dataset.gas;
-    $$('.enq__gas input').forEach(function (r) { r.checked = r.value === want; });
+  function tick(name, value) {
+    $$('#enq input[name="' + name + '"]').forEach(function (c) { if (c.value === value) c.checked = true; });
+    countGases();
+  }
+  $('#gasCta').addEventListener('click', function () { tick('gas', this.dataset.gas); });
+  $$('[data-need]').forEach(function (a) { a.addEventListener('click', function () { tick('need', a.dataset.need); }); });
+
+  /* valve photos: oxygen and CO2 */
+  $$('#valveSwap button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var v = b.dataset.valve;
+      $$('#valveSwap button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+      $$('#valveSwap img').forEach(function (img) { img.classList.toggle('is-on', img.dataset.valve === v); });
+    });
   });
 
-  /* enquiry form (sample: nothing is sent) */
-  var form = $('#enq'), msg = $('#enqMsg');
-  form.addEventListener('submit', function (e) {
-    e.preventDefault();
+  /* the cylinder cycle holds still for people who prefer less motion */
+  var cycle = $('#cycleSvg');
+  if (cycle && reduce && cycle.pauseAnimations) cycle.pauseAnimations();
+
+  /* enquiry form (sample: "Send enquiry" shows a preview; WhatsApp opens a ready message) */
+  var WA = '919727785477';
+  var form = $('#enq'), msg = $('#enqMsg'), gasCount = $('#gasCount');
+  function picked(name) { return $$('#enq input[name="' + name + '"]:checked').map(function (c) { return c.value; }); }
+  function countGases() {
+    var n = picked('gas').length;
+    gasCount.textContent = n ? n + (n === 1 ? ' gas chosen' : ' gases chosen') : 'Choose one or more';
+    gasCount.classList.toggle('is-on', n > 0);
+    if (n || picked('need').length) $('#gasChips').classList.remove('is-bad');
+  }
+  form.addEventListener('change', countGases);
+  function listOf(items) { return items.length < 2 ? items.join('') : items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1]; }
+  function val(id) { return $('#' + id).value.trim(); }
+  function check() {
     var bad = [];
     ['fName', 'fPhone'].forEach(function (id) {
       var el = $('#' + id), v = el.value.trim();
@@ -115,11 +145,38 @@
       el.classList.toggle('is-bad', !ok);
       if (!ok) bad.push(el);
     });
-    if (bad.length) { bad[0].focus(); msg.hidden = false; msg.textContent = 'Please add your name and a 10-digit phone number.'; return; }
-    var gas = (form.querySelector('input[name="gas"]:checked') || {}).value || 'gas';
+    var none = !picked('gas').length && !picked('need').length;
+    $('#gasChips').classList.toggle('is-bad', none);
+    if (bad.length || none) {
+      msg.hidden = false;
+      msg.textContent = bad.length ? 'Please add your name and a 10-digit phone number.' : 'Please choose at least one gas or product.';
+      (bad[0] || $('#gasChips input')).focus();
+      return false;
+    }
+    return true;
+  }
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!check()) return;
+    var items = picked('gas').concat(picked('need')).map(function (x) { return x.toLowerCase(); });
     msg.hidden = false;
-    msg.textContent = 'Thank you, ' + $('#fName').value.trim().split(' ')[0] + '. Your ' + gas.toLowerCase() + ' enquiry is ready. On the live website it goes straight to the Maruti Gases team by email and WhatsApp.';
+    msg.textContent = 'Thank you, ' + val('fName').split(' ')[0] + '. Your enquiry for ' + listOf(items) + ' is ready. On the live website it goes straight to the Maruti Gases sales team.';
     form.reset();
+    countGases();
+  });
+  $('#enqWa').addEventListener('click', function () {
+    if (!check()) return;
+    var lines = ['Hello Maruti Gases, I would like a quote.', '', 'Name: ' + val('fName')];
+    if (val('fCompany')) lines.push('Company: ' + val('fCompany'));
+    lines.push('Phone: ' + val('fPhone'));
+    if (val('fCity')) lines.push('City: ' + val('fCity'));
+    lines.push('Supply for: ' + picked('use').join(''));
+    if (picked('gas').length) lines.push('Gases: ' + picked('gas').join(', '));
+    if (picked('need').length) lines.push('Also need: ' + picked('need').join(', '));
+    if (val('fQty')) lines.push('Quantity: ' + val('fQty'));
+    if (val('fMsg')) lines.push('Note: ' + val('fMsg'));
+    msg.hidden = true;
+    window.open('https://wa.me/' + WA + '?text=' + encodeURIComponent(lines.join('\n')), '_blank', 'noopener');
   });
 
   /* sample notes */
